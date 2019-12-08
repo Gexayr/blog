@@ -2,12 +2,27 @@
 
 namespace App\Http\Controllers\Blog\Admin;
 
+use App\Http\Requests\BlogCategoryCreateRequest;
 use App\Http\Requests\BlogCategoryUpdateRequest;
 use App\Models\BlogCategory;
-use Illuminate\Http\Request;
+use App\Repositories\BlogCategoryRepository;
+use phpDocumentor\Reflection\Types\Parent_;
 
 class CategoryController extends BaseController
 {
+
+    /**
+     * @var BlogCategoryRepository
+     */
+    private $blogCategoryRepository;
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        $this->blogCategoryRepository = app(BlogCategoryRepository::class);
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -15,8 +30,10 @@ class CategoryController extends BaseController
      */
     public function index()
     {
-        $paginator = BlogCategory::paginate(15);
-        return view('blog.admin.category.index', compact('paginator'));
+//        $paginator = BlogCategory::paginate(15);
+        $paginator = $this->blogCategoryRepository->getAllWithPaginate(5);
+
+        return view('blog.admin.categories.index', compact('paginator'));
     }
 
     /**
@@ -26,7 +43,12 @@ class CategoryController extends BaseController
      */
     public function create()
     {
-        dd(__METHOD__);
+        $item = new BlogCategory();
+        $categoryList = $this->blogCategoryRepository->getForComboBox();
+//        $categoryList = BlogCategory::all();
+
+        return view('blog.admin.categories.edit',
+            compact('item', 'categoryList'));
     }
 
     /**
@@ -35,9 +57,24 @@ class CategoryController extends BaseController
      * @param \Illuminate\Http\Request $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(BlogCategoryCreateRequest $request)
     {
-        dd(__METHOD__);
+        $data = $request->input();
+        if(empty($data['slug'])) {
+            $data['slug'] = str_slug($data['title']);
+        }
+
+     $item = (new BlogCategory())->create($data);
+
+        if ($item) {
+            return redirect()
+                ->route('blog.admin.categories.edit', [$item->id])
+                ->with(['success' => 'Success created']);
+        } else {
+            return back()
+                ->withErrors(['msg' => 'Saving Error'])
+                ->withInput();
+        }
     }
 
 
@@ -45,13 +82,16 @@ class CategoryController extends BaseController
      * Show the form for editing the specified resource.
      *
      * @param int $id
+     * @param BlogCategoryRepository $categoryRepository
      * @return \Illuminate\Http\Response
      */
     public function edit($id)
     {
-//        admin/blog/categories/{category}/edit
-        $item = BlogCategory::findOrFail($id);
-        $categoryList = BlogCategory::all();
+        $item = $this->blogCategoryRepository->getEdit($id);
+        if(empty($item)){
+            abort(404);
+        }
+        $categoryList = $this->blogCategoryRepository->getForComboBox();
 
         return view('blog.admin.categories.edit',
             compact('item', 'categoryList'));
@@ -66,25 +106,7 @@ class CategoryController extends BaseController
      */
     public function update(BlogCategoryUpdateRequest $request, $id)
     {
-        /*$rules = [
-            'title'    => 'required|min:5|max:200',
-            'slug'      => 'max:200',
-            'description' => 'string|max:500|min:3',
-            'parent_id' => 'required|integer|exists:blog_categories,id'
-        ];*/
-
-        /*$validateData = $this->validate($request, $rules);*/
-        /*$validateData = $request->validate($rules);*/
-        /*$validator = \Validaror::make($request->all(), $rules);
-        $validateData[] = $validator->passes();
-        $validateData[] = $validator->validate();
-        $validateData[] = $validator->valid();
-        $validateData[] = $validator->failed();
-        $validateData[] = $validator->errors();
-        $validateData[] = $validator->fails();*/
-
-
-        $item = BlogCategory::find($id);
+        $item = $this->blogCategoryRepository->getEdit($id);
         if (empty($item)) {
             return back()
                 ->withErrors(['msg' => "{$id} data not found"])
@@ -92,7 +114,11 @@ class CategoryController extends BaseController
         }
 
         $data = $request->all();
-        $result = $item->fill($data)->save();
+        if(empty($data['slug'])) {
+            $data['slug'] = str_slug($data['title']);
+        }
+//        $result = $item->fill($data)->save();
+        $result = $item->update($data);
 
         if ($result) {
             return redirect()
