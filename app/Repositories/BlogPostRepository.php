@@ -10,6 +10,9 @@ class BlogPostRepository extends CoreRepository
         return Model::class;
     }
 
+    /**
+     * @return mixed
+     */
     public function getAllWithPaginate()
     {
         $columns = [
@@ -34,5 +37,14 @@ class BlogPostRepository extends CoreRepository
                     ])
                         ->paginate(25);
         return $result;
+    }
+
+    /**
+     * @param $id
+     * @return mixed
+     */
+    public function getEdit($id)
+    {
+        return $this->startConditions()->find($id);
     }
 }
