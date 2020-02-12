@@ -5,9 +5,7 @@ namespace App\Http\Controllers\Blog\Admin;
 use App\Http\Requests\BlogPostUpdateRequest;
 use App\Repositories\BlogCategoryRepository;
 use App\Repositories\BlogPostRepository;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 /**
  * Class PostController
@@ -116,14 +114,14 @@ class PostController extends BaseController
         }
 
         $data = $request->all();
-
-        if (empty($data['slug'])) {
-            $data['slug'] = \Str::slug($data['title']);
-        }
-
-        if(empty($item->published_at) && $data['is_published']) {
-            $data['published_at'] = Carbon::now();
-        }
+//        go to observer
+//        if (empty($data['slug'])) {
+//            $data['slug'] = \Str::slug($data['title']);
+//        }
+//
+//        if(empty($item->published_at) && $data['is_published']) {
+//            $data['published_at'] = Carbon::now();
+//        }
 
         $result = $item->update($data);
 
