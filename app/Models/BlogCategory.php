@@ -4,10 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use PhpParser\Node\Stmt\Return_;
 
 class BlogCategory extends Model
 {
     use SoftDeletes;
+
+    const ROOT = 1;
 
     protected $fillable
         = [
@@ -16,4 +19,25 @@ class BlogCategory extends Model
             'parent_id',
             'description',
         ];
+
+    public function parentCategory()
+    {
+        return $this->belongsTo(BlogCategory::class, 'parent_id', 'id');
+    }
+
+    public function getParentTitleAttribute()
+    {
+        $title = $this->parentCategory->title
+            ?? ($this->isRoot()
+            ? 'Root'
+            : '???');
+
+        return $title;
+    }
+
+    public function isRoot()
+    {
+        return $this->id === BlogCategory::ROOT;
+    }
+
 }
