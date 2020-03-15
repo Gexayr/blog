@@ -57,6 +57,10 @@ class BlogPostObserver
         //
     }
 
+    public function deleting(BlogPost $blogPost)
+    {
+//        return false;
+    }
     /**
      * Handle the models blog post "restored" event.
      *
